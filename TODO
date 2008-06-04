@@ -1,0 +1,6 @@
+- Build as a krita / gwenview / kolourpaint plugin
+- Crop, offset, scale
+- Allow javascript to be executed  before screenshot
+- Allow a delay before taking the screenshot, to allow animation to settle down
+- Render flash
+- Post-screenshot interface
