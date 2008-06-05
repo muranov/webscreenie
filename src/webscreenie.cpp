@@ -108,7 +108,7 @@ void WebScreenie::parseArgs(int argc, const char ** argv)
 					options.offset.setY(regex.cap(2).toInt());
 				}
 				else {
-					fprintf(stderr, "Invalid offset parameter: %s", arg.toAscii().constData());
+					fprintf(stderr, "Invalid offset parameter: %s. Must be in format \"100x100\"", arg.toAscii().constData());
 					usage(stderr);
 					exit(1);
 				}
@@ -118,11 +118,34 @@ void WebScreenie::parseArgs(int argc, const char ** argv)
 					usage(stderr);
 					exit(1);
 				}
-				;
+				QString arg = argv[++i];
+				QRegExp regex("(\\d+)x(\\d+)");
+				int pos = regex.indexIn(arg);
+				if(pos > -1) {
+					options.size.setWidth(regex.cap(1).toInt());
+					options.size.setHeight(regex.cap(2).toInt());
+				}
+				else {
+					fprintf(stderr, "Invalid size parameter: %s.  Must be in format \"100x100\"", arg.toAscii().constData());
+					usage(stderr);
+					exit(1);
+				}
 				
 			}
 			else if(!strcmp(argv[i],"--target_size")) {
 				if(i+1>= argc) {
+					usage(stderr);
+					exit(1);
+				}
+				QString arg = argv[++i];
+				QRegExp regex("(\\d+)x(\\d+)");
+				int pos = regex.indexIn(arg);
+				if(pos > -1) {
+					options.targetSize.setWidth(regex.cap(1).toInt());
+					options.targetSize.setHeight(regex.cap(2).toInt());
+				}
+				else {
+					fprintf(stderr, "Invalid size parameter: %s. Must be in format \"100x100\"", arg.toAscii().constData());
 					usage(stderr);
 					exit(1);
 				}
@@ -153,7 +176,7 @@ void WebScreenie::run(int argc, const char ** argv)
 	
 	options.delay = 0;
 	
-	url = "http://www.example.com";
+	url = "http://code.google.com/p/webscreenie/";
 	file = "webscreenie.png";
 
 	parseArgs(argc,argv);
@@ -196,9 +219,6 @@ void WebScreenie::load(QUrl url)
 */
 void WebScreenie::render()
 {
-	// Maximize content
-	webview.page()->setViewportSize(webview.page()->mainFrame()->contentsSize());
-	
 	// Hide scrollbars
 	webview.page()->mainFrame()->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOff);
 	webview.page()->mainFrame()->setScrollBarPolicy(Qt::Vertical, Qt::ScrollBarAlwaysOff);
@@ -206,7 +226,7 @@ void WebScreenie::render()
 	// TODO: Read from command-line / UI options
 	options.script = ""
 	"var links = document.getElementsByTagName('a');"
-	"for(var i = 0; i < links.length; i++) {"
+	"for(var i = 0; i < links.lgth; i++) {"
 	"	links[i].style.border = '3px solid blue';"
 	"}";
 	
@@ -219,11 +239,16 @@ void WebScreenie::render()
 		
 	}
 	
-	int x = options.offset.x();
-	int y = options.offset.y();
-	int w = webview.page()->viewportSize().width() - x;
-	int h = webview.page()->viewportSize().height() - y;
-
+	// Calculate page dimension
+	int pageWidth = options.size.width() ? options.size.width() : webview.page()->mainFrame()->contentsSize().width();
+	int pageHeight = options.size.height() ? options.size.height() : webview.page()->mainFrame()->contentsSize().height();
+	pageWidth += options.offset.x();
+	pageHeight += options.offset.y();
+	
+	// Set the dimension
+	webview.page()->setViewportSize(QSize(pageWidth, pageHeight));
+	
+	// Create the target image
 	QImage image(webview.page()->viewportSize(), QImage::Format_ARGB32);
 	QPainter painter(&image);
 	
@@ -231,15 +256,30 @@ void WebScreenie::render()
 	painter.end();
 	
 	// Crop
-	QImage cropped = image.copy(x,y,w,h);
+	int w = webview.page()->viewportSize().width() - options.offset.x();
+	int h = webview.page()->viewportSize().height() - options.offset.y();
+	QImage cropped = image.copy(options.offset.x(), options.offset.y(), w, h);
 	
 	// Resize
+	QImage resized;
+	if(options.targetSize.width() && options.targetSize.height()) {
+		resized = cropped.scaled(options.targetSize.width(), options.targetSize.height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+	}
+	else if(options.targetSize.width()) {
+		resized = cropped.scaledToWidth(options.targetSize.width(), Qt::SmoothTransformation);
+	}
+	else if(options.targetSize.height()) {
+		resized = cropped.scaledToHeight(options.targetSize.height(), Qt::SmoothTransformation);
+	}
+	else {
+		resized = cropped.copy();
+	}
 	//QImage resized = image.scaled();
 	
-	cropped.save(file);
+	resized.save(file);
 	
 	
-	
+	// Success!
 	printf("Image successfully saved to \"%s\"\n", file.toAscii().constData());
 }
 
