@@ -22,10 +22,12 @@ http://code.google.com/p/wkhtmltopdf/
 
 #include "webscreenie.h"
 
-#include <string.h>
+#include <iostream> 
+#include <string>
 
 #include <QtDebug>
 #include <QtGui>
+#include <QtScript>
 
 #include <QImage>
 #include <QString>
@@ -65,6 +67,9 @@ void WebScreenie::usage(FILE * fd)
 "  --css <css>            custom CSS to change render style\n"
 "  --css_file <file>      custom CSS\n"
 "  --delay <ms>           delay, in microseconds, before render\n"
+"\n"
+"Scripting Options:\n"
+"  --interactive          run as an interactive QtScript shell\n"
 "  --options <file>       configuration file\n" 
 	);
 }
@@ -150,6 +155,9 @@ void WebScreenie::parseArgs(int argc, const char ** argv)
 					exit(1);
 				}
 			}
+			else if(!strcmp(argv[i], "--interactive")) {
+				interactiveMode();
+			}
 			else {
 				usage(stderr);
 				exit(1);
@@ -157,6 +165,46 @@ void WebScreenie::parseArgs(int argc, const char ** argv)
 			continue;
 		}
 	}
+}
+
+/*
+*
+*/
+void WebScreenie::interactiveMode()
+{
+	printf("WebScreenie Interactive Mode. Type \"help\" for a list of commands\n");
+	
+	QScriptEngine engine(this);
+	QScriptValue main = engine.newQObject(this);
+     	engine.globalObject().setProperty("main", main);
+
+	while(1) {
+		
+		printf("> ");
+		
+		char line[80];
+		scanf("%s", line);
+		QString cmd;
+		
+		cmd = line;
+		
+		if(cmd == "help") {
+			printf("Type \"quit\" to exit\n");
+			continue;
+		}
+		
+		if(cmd == "quit" || cmd == "exit") {
+			exit(0);
+		}
+		
+		QScriptValue result = engine.evaluate(cmd);
+
+		QString resultString = result.toString();
+		
+		qDebug() << resultString;
+		
+	}
+	
 }
 
 /*
@@ -300,7 +348,8 @@ int main(int argc, char * argv[])
 {
 	QApplication a(argc,argv);
 	app = &a;
-	WebScreenie x;
-	x.run(argc,(const char **)argv);
+	WebScreenie *x = new WebScreenie();
+	x->run(argc,(const char **)argv);
+	delete x;
 	return a.exec();
 }
