@@ -26,10 +26,54 @@ http://code.google.com/p/wkhtmltopdf/
 //#include <stdlib.h>
 
 #include <QObject>
+#include <QPoint>
+#include <QSize>
+#include <QString>
+#include <QUrl>
 #include <QWebView>
 
-class QWebView;
+/**
+*
+*/
+class PreprocOptions : public QObject
+{
+	Q_OBJECT
+public:
 
+	/**
+	* Distance, in pixels, from upper-left corner of the web page
+	*/
+	QPoint offset;
+	
+	/**
+	* Size of the screen to grab. If 0x0, grab everything
+	*/
+	QSize size;
+	
+	/**
+	* Target size of the final image
+	*/
+	QSize targetSize;
+	
+	/**
+	* Javascript to apply before rendering
+	*/
+	QString script;
+	
+	/**
+	* CSS to apply before rendering
+	*/
+	QString css;
+	
+	/**
+	* Delay, in microseconds, before rendering
+	*/
+	int delay;
+};
+
+/**
+*
+*/
 class WebScreenie : public QObject 
 {
 	Q_OBJECT
@@ -38,15 +82,20 @@ public:
 	* The QWebView will be used to load & render the web page
 	*/
 	QWebView webview;
-
+	
+	/**
+	* Options
+	*/
+	PreprocOptions options;
+	
 	/**
 	* Input URL
 	*/
-	const char * in;
+	QUrl url;
 	/**
-	* Output URL
+	* Output file
 	*/
-	const char * out;
+	QString file;
 	
 	/**
 	* Print basic usage information
@@ -81,6 +130,12 @@ public slots:
 	* @param int	Progress so far, in percentage
 	*/
 	void loadProgress(int progress);
+	
+	void load(const QUrl url);
+	
+	void render();
+	
+	void save() { };
 };
 
 #endif //__WEBSCREENIE_H__
