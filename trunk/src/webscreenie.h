@@ -133,9 +133,12 @@ public slots:
 	
 	void load(const QUrl url);
 	
+	void interactiveMode();
+	
 	void render();
 	
 	void save() { };
+
 };
 
 #endif //__WEBSCREENIE_H__
