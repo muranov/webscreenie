@@ -57,9 +57,9 @@ void WebScreenie::usage(FILE * fd)
 "  --file <url>           use url as output\n"
 "\n"
 "Image Options:\n"
-"  --offset <WxY>         offset from upper-top to crop\n"
-"  --size <WxY>           dimension of the web page capture\n"
-"  --target_size <WxY>    target dimension of the output image\n"
+"  --offset <WxH>         offset from upper-top to crop\n"
+"  --size <WxH>           dimension of the web page capture\n"
+"  --target_size <WxH>    target dimension of the output image\n"
 "\n"
 "Advanced Options:\n"
 "  --script <script>      custom javascript to execute before render\n"
@@ -155,6 +155,60 @@ void WebScreenie::parseArgs(int argc, const char ** argv)
 					exit(1);
 				}
 			}
+			else if(!strcmp(argv[i], "--script")) {
+				if(i+1>= argc) {
+					usage(stderr);
+					exit(1);
+				}
+				QString arg = argv[++i];
+				options.script = arg;
+			}
+			else if(!strcmp(argv[i], "--script_file")) {
+				if(i+1>= argc) {
+					usage(stderr);
+					exit(1);
+				}
+				QString arg = argv[++i];
+				QFile file(arg);
+				if (!file.open(QIODevice::ReadOnly)) {
+					fprintf(stderr, "Could not open file \"%s\".", arg.toAscii().constData());
+					usage(stderr);
+					exit(1);
+				}
+				QTextStream stream(&file);
+				while(!(stream.atEnd())) {
+					options.script += (stream.readLine() + "\n");
+				}
+				file.close();
+				
+			}
+			else if(!strcmp(argv[i], "--css")) {
+				if(i+1>= argc) {
+					usage(stderr);
+					exit(1);
+				}
+				QString arg = argv[++i];
+				options.css = arg;
+			}
+			else if(!strcmp(argv[i], "--css_file")) {
+				if(i+1>= argc) {
+					usage(stderr);
+					exit(1);
+				}
+				QString arg = argv[++i];
+				QFile file(arg);
+				if (!file.open(QIODevice::ReadOnly)) {
+					fprintf(stderr, "Could not open file \"%s\".", arg.toAscii().constData());
+					usage(stderr);
+					exit(1);
+				}
+				QTextStream stream(&file);
+				while(!(stream.atEnd())) {
+					options.css += (stream.readLine() + "\n");
+				}
+				file.close();
+				
+			}
 			else if(!strcmp(argv[i], "--interactive")) {
 				interactiveMode();
 			}
@@ -172,6 +226,7 @@ void WebScreenie::parseArgs(int argc, const char ** argv)
 */
 void WebScreenie::interactiveMode()
 {
+/*
 	printf("WebScreenie Interactive Mode. Type \"help\" for a list of commands\n");
 	
 	QScriptEngine engine(this);
@@ -204,8 +259,9 @@ void WebScreenie::interactiveMode()
 		qDebug() << resultString;
 		
 	}
-	
+*/
 }
+
 
 /*
 *
@@ -271,23 +327,28 @@ void WebScreenie::render()
 	webview.page()->mainFrame()->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOff);
 	webview.page()->mainFrame()->setScrollBarPolicy(Qt::Vertical, Qt::ScrollBarAlwaysOff);
 	
-	// TODO: Read from command-line / UI options
-	options.script = ""
-	"var links = document.getElementsByTagName('a');"
-	"for(var i = 0; i < links.lgth; i++) {"
-	"	links[i].style.border = '3px solid blue';"
-	"}";
-	
+	// Execute custom javascript
 	if(!options.script.isEmpty()) {
-		QVariant result = webview.page()->mainFrame()->evaluateJavaScript(options.script);
-		qDebug() << result.toString();
+		QVariant jsResult = webview.page()->mainFrame()->evaluateJavaScript(options.script);
 	}
 	
+	// Add custom CSS
 	if(!options.css.isEmpty()) {
+		// TODO: What's the proper way of adding a style element in the page with QtWebKit?
+		// Handle this with javascript for now...
+		
+		// Will fail if options.css contains "'" (?)
+		
+		QString cssJs;
+		cssJs.append("var style = document.createElement('style');var txt = document.createTextNode('");
+		cssJs.append(options.css);
+		cssJs.append("'); style.appendChild(txt);document.getElementsByTagName('head')[0].appendChild(style);");
+
+ 		QVariant cssResult = webview.page()->mainFrame()->evaluateJavaScript(cssJs);
 		
 	}
 	
-	// Calculate page dimension
+	// Calculate page dimension, or try to use best possible size
 	int pageWidth = options.size.width() ? options.size.width() : webview.page()->mainFrame()->contentsSize().width();
 	int pageHeight = options.size.height() ? options.size.height() : webview.page()->mainFrame()->contentsSize().height();
 	pageWidth += options.offset.x();
@@ -326,7 +387,6 @@ void WebScreenie::render()
 	
 	resized.save(file);
 	
-	
 	// Success!
 	printf("Image successfully saved to \"%s\"\n", file.toAscii().constData());
 }
@@ -347,9 +407,7 @@ void WebScreenie::loadProgress(int progress)
 int main(int argc, char * argv[]) 
 {
 	QApplication a(argc,argv);
-	app = &a;
-	WebScreenie *x = new WebScreenie();
-	x->run(argc,(const char **)argv);
-	delete x;
+	WebScreenie webscreenie;
+	webscreenie.run(argc,(const char **)argv);
 	return a.exec();
 }
