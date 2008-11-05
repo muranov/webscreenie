@@ -13,17 +13,14 @@ webscreenie --url http://www.example.com --file example.png --target_size 640x48
  * --file <url>           use url as output
 
 ===Image Options:===
- * --offset <WxY>         offset from upper-top to crop
- * --size <WxY>           dimension of the web page capture
- * --target_size <WxY>    target dimension of the output image
+ * --offset <WxH>         offset from upper-top to crop
+ * --size <WxH>           dimension of the web page capture
+ * --target_size <WxH>    target dimension of the output image
 
 ===Advanced Options:===
-
-(Not yet implemented)
-
  * --script <script>      custom javascript to execute before render
  * --script_file <file>   custom javascript file to execute before render
  * --css <css>            custom CSS to change render style
  * --css_file <file>      custom CSS
- * --delay <ms>           delay, in microseconds, before render
- * --options <file>       configuration file
+ * --delay <ms>           delay, in milliseconds, before render
+ * --options <file>       configuration file (Not yet implemented)
