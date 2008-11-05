@@ -31,11 +31,22 @@ http://code.google.com/p/wkhtmltopdf/
 
 #include <QImage>
 #include <QString>
+#include <QTimer>
 #include <QWebFrame>
 #include <QWebPage>
 #include <QWebView>
 
 QApplication * app;
+
+WebScreenie::WebScreenie()
+{
+	feedbackTimer = new QTimer(this);
+}
+
+WebScreenie::~WebScreenie()
+{
+	delete(feedbackTimer);
+}
 
 /*
 *
@@ -66,7 +77,7 @@ void WebScreenie::usage(FILE * fd)
 "  --script_file <file>   custom javascript file to execute before render\n"
 "  --css <css>            custom CSS to change render style\n"
 "  --css_file <file>      custom CSS\n"
-"  --delay <ms>           delay, in microseconds, before render\n"
+"  --delay <ms>           delay, in milliseconds, before render\n"
 "\n"
 "Scripting Options:\n"
 "  --interactive          run as an interactive QtScript shell\n"
@@ -209,6 +220,14 @@ void WebScreenie::parseArgs(int argc, const char ** argv)
 				file.close();
 				
 			}
+			else if(!strcmp(argv[i], "--delay")) {
+				if(i+1>= argc) {
+					usage(stderr);
+					exit(1);
+				}
+				QString arg = argv[++i];
+				options.delay = arg.toInt();
+			}
 			else if(!strcmp(argv[i], "--interactive")) {
 				interactiveMode();
 			}
@@ -306,10 +325,30 @@ void WebScreenie::loadFinished(bool success)
 		return;
 	}
 	
-	render();
+	if(options.delay > 0) {
+	    printf("Waiting %d milliseconds before snapshot..", options.delay);
+	    QTimer::singleShot(options.delay, this, SLOT(render()));
+	    
+	    // User feedback in case delay is longer than 2 seconds
+	    if(options.delay > 2000) {
+		
+		connect(feedbackTimer, SIGNAL(timeout()), this, SLOT(delayFeedback()));
+		feedbackTimer->start(1000);
+	    }
+	    
+	}
+	else {
+	    render();
+	}	
 	
-	app->quit();
 }
+
+void WebScreenie::delayFeedback()
+{
+    printf(".");
+    fflush(stdout);
+}
+
 /*
 *
 */
@@ -323,6 +362,12 @@ void WebScreenie::load(QUrl url)
 */
 void WebScreenie::render()
 {
+	printf("\n");
+	fflush(stdout);
+	
+	// Stop feedback
+	feedbackTimer->stop();
+	
 	// Hide scrollbars
 	webview.page()->mainFrame()->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOff);
 	webview.page()->mainFrame()->setScrollBarPolicy(Qt::Vertical, Qt::ScrollBarAlwaysOff);
@@ -389,6 +434,8 @@ void WebScreenie::render()
 	
 	// Success!
 	printf("Image successfully saved to \"%s\"\n", file.toAscii().constData());
+	
+	app->quit();
 }
 
 /*

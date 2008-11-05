@@ -78,6 +78,10 @@ class WebScreenie : public QObject
 {
 	Q_OBJECT
 public:
+	WebScreenie();
+	
+	~WebScreenie();
+
 	/**
 	* The QWebView will be used to load & render the web page
 	*/
@@ -112,6 +116,8 @@ public:
 	*/
 	void run(int argc, const char** argv);
 	
+	QTimer *feedbackTimer;
+	
 public slots:
 
 	/**
@@ -136,6 +142,8 @@ public slots:
 	void interactiveMode();
 	
 	void render();
+	
+	void delayFeedback();
 	
 	void save() { };
 
