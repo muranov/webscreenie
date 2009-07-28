@@ -1,0 +1,55 @@
+#labels installation,building,qmake,cmake,Phase-Deploy
+#Instruction for building / installing webscreenie
+
+= Prerequisite =
+
+== For qmake ==
+
+  * Qt 4.5+
+
+== For cmake ==
+
+  * Qt 4.5+
+  * cmake 2.6+
+
+= Getting the source =
+
+The source is available through svn (subversion) on google code. The project url is:
+https://webscreenie.googlecode.com/svn/trunk
+
+= Building with qmake =
+
+qmake is the build utility for Qt. A project file (.pro) is provided with webscreenie so building with qmake is very straightforward:
+
+  # "cd" to the root of the source
+    * cd /home/myuser/src/webscreenie
+  # Create a temporary build directory
+    * mkdir build
+    * cd build
+  # Create the MakeFile with qmake
+    * qmake ../webscreenie.pro
+  # Build the project with make
+    * make
+  # That's all. You should have a compiled binary named "webscreenie" in your build directory
+
+Run webscreenie --help for more information about the command line options
+
+= Building with cmake =
+
+Alternately, a cmake file is also provided if you prefer to build the project using cmake:
+
+  # "cd to the root of the source
+    * cd /home/myuser/src/webscreenie
+  # Create a temporary build directory
+    * mkdir build
+    * cd build
+  # Create the Makefile with cmake
+    * cmake ..
+  # Build the project with make
+    * make
+  # That's all. You should have a compiled binary named "webscreenie" in your build directory
+
+Run webscreenie --help for more information about the command line options
+
+---
+Note: Qt must be compiled with QtWebkit and QtScript enabled
