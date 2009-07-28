@@ -71,6 +71,8 @@ void WebScreenie::usage(FILE * fd)
 "  --offset <WxH>         offset from upper-top to crop\n"
 "  --size <WxH>           dimension of the web page capture\n"
 "  --target_size <WxH>    target dimension of the output image\n"
+"  --zoom <factor>        zoom factor (float) for the whole page\n"
+"  --textzoom <factor>    text zoom factor (float)\n"
 "\n"
 "Advanced Options:\n"
 "  --script <script>      custom javascript to execute before render\n"
@@ -165,6 +167,22 @@ void WebScreenie::parseArgs(int argc, const char ** argv)
 					usage(stderr);
 					exit(1);
 				}
+			}
+			else if(!strcmp(argv[i], "--zoom")) {
+				if(i+1>= argc) {
+					usage(stderr);
+					exit(1);
+				}
+				QString arg = argv[++i];
+				options.zoom = arg.toFloat();
+			}
+			else if(!strcmp(argv[i], "--textzoom")) {
+				if(i+1>= argc) {
+					usage(stderr);
+					exit(1);
+				}
+				QString arg = argv[++i];
+				options.textzoom = arg.toFloat();
 			}
 			else if(!strcmp(argv[i], "--script")) {
 				if(i+1>= argc) {
@@ -299,9 +317,12 @@ void WebScreenie::run(int argc, const char ** argv)
 	
 	options.delay = 0;
 	
+	options.zoom = 1.0;
+	options.textzoom = 1.0;
+	
 	url = "http://code.google.com/p/webscreenie/";
 	file = "webscreenie.png";
-
+	
 	parseArgs(argc,argv);
 	
 	connect(&webview, SIGNAL(loadProgress(int)), this, SLOT(loadProgress(int)));
@@ -371,6 +392,14 @@ void WebScreenie::render()
 	// Hide scrollbars
 	webview.page()->mainFrame()->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOff);
 	webview.page()->mainFrame()->setScrollBarPolicy(Qt::Vertical, Qt::ScrollBarAlwaysOff);
+	
+	// Set the zoom factor & text zoom
+	if(options.zoom != 1.0) {
+		webview.page()->mainFrame()->setZoomFactor(options.zoom);
+	}
+	if(options.textzoom != 1.0) {
+		webview.page()->mainFrame()->setTextSizeMultiplier(options.textzoom);
+	}
 	
 	// Execute custom javascript
 	if(!options.script.isEmpty()) {
