@@ -69,6 +69,16 @@ public:
 	* Delay, in microseconds, before rendering
 	*/
 	int delay;
+	
+	/**
+	* Page zoom (all page)
+	*/
+	qreal zoom;
+	
+	/**
+	* Text zoom
+	*/
+	qreal textzoom;
 };
 
 /**
